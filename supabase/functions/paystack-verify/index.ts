@@ -1,3 +1,4 @@
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -10,7 +11,10 @@ const corsHeaders = {
 function respond(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -29,57 +33,99 @@ Deno.serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!secret || !supabaseUrl || !serviceKey) {
-      return respond({ error: "Server configuration incomplete" }, 500);
+      console.error("Payment verification configuration is incomplete.");
+
+      return respond(
+        { error: "Server configuration incomplete" },
+        500,
+      );
     }
 
     const body = await req.json().catch(() => null);
+
     const reference =
-      typeof body?.reference === "string" ? body.reference.trim() : "";
+      typeof body?.reference === "string"
+        ? body.reference.trim()
+        : "";
 
     if (
       !reference ||
       reference.length > 150 ||
       !/^[A-Za-z0-9_-]+$/.test(reference)
     ) {
-      return respond({ error: "Valid payment reference required" }, 400);
+      return respond(
+        { error: "Valid payment reference required" },
+        400,
+      );
     }
 
     const db = createClient(supabaseUrl, serviceKey);
 
+    // Only verify references created and recorded by this application.
     const { data: payment, error: lookupError } = await db
       .from("payments")
-      .select("*")
+      .select(
+        "reference, email, amount_kobo, currency, payment_status, paid_at",
+      )
       .eq("reference", reference)
       .maybeSingle();
 
     if (lookupError) {
-      console.error("Payment lookup failed:", lookupError);
-      return respond({ error: "Could not look up payment" }, 500);
+      console.error("Payment lookup failed:", lookupError.message);
+
+      return respond(
+        { error: "Could not look up payment" },
+        500,
+      );
     }
 
     if (!payment) {
-      return respond({ error: "Unknown payment reference" }, 404);
+      return respond(
+        { error: "Unknown payment reference" },
+        404,
+      );
     }
 
+    // Verify the transaction directly with Paystack.
     const response = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-      { headers: { Authorization: `Bearer ${secret}` } },
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          Accept: "application/json",
+        },
+      },
     );
 
     const result = await response.json().catch(() => ({}));
     const transaction = result?.data;
 
-    if (!response.ok || result.status !== true || !transaction) {
-      return respond({ error: "Paystack verification failed" }, 502);
+    if (
+      !response.ok ||
+      result.status !== true ||
+      !transaction
+    ) {
+      console.error(
+        "Paystack verification request failed:",
+        result?.message || response.status,
+      );
+
+      return respond(
+        { error: "Paystack verification failed" },
+        502,
+      );
     }
 
+    // Validate the transaction against the server-created payment record.
     const matches =
       transaction.reference === payment.reference &&
       Number(transaction.amount) === Number(payment.amount_kobo) &&
-      transaction.currency === payment.currency;
+      transaction.currency === payment.currency &&
+      typeof transaction.status === "string";
 
     let paymentStatus = matches
-      ? String(transaction.status || "unknown").toLowerCase()
+      ? transaction.status.toLowerCase()
       : "unknown";
 
     const allowedStatuses = [
@@ -95,28 +141,28 @@ Deno.serve(async (req: Request) => {
       paymentStatus = "unknown";
     }
 
-    const isSuccess = matches && paymentStatus === "success";
+    const isSuccess =
+      matches && paymentStatus === "success";
 
-    // Successful payment is not proof of bank settlement.
-    const settlementStatus = isSuccess
-      ? payment.settlement_status === "settled"
-        ? "settled"
-        : "pending"
-      : payment.settlement_status;
+    // Use the actual Paystack paid_at timestamp for a successful receipt.
+    const verifiedPaidAt =
+      isSuccess && typeof transaction.paid_at === "string"
+        ? transaction.paid_at
+        : null;
 
     const { error: updateError } = await db
       .from("payments")
       .update({
         payment_status: paymentStatus,
-        settlement_status: settlementStatus,
         paystack_transaction_id:
-          transaction.id == null ? null : String(transaction.id),
-        gateway_response: String(transaction.gateway_response || "").slice(
-          0,
-          500,
-        ),
+          transaction.id == null
+            ? null
+            : String(transaction.id),
+        gateway_response: String(
+          transaction.gateway_response || "",
+        ).slice(0, 500),
         paid_at: isSuccess
-          ? transaction.paid_at || new Date().toISOString()
+          ? verifiedPaidAt || payment.paid_at || null
           : null,
         raw_verify: result,
         updated_at: new Date().toISOString(),
@@ -124,20 +170,37 @@ Deno.serve(async (req: Request) => {
       .eq("reference", reference);
 
     if (updateError) {
-      console.error("Payment update failed:", updateError);
-      return respond({ error: "Could not save verification result" }, 500);
+      console.error("Payment update failed:", updateError.message);
+
+      return respond(
+        { error: "Could not save verification result" },
+        500,
+      );
     }
 
+    // The frontend uses these verified fields to construct the receipt.
+    // Settlement details are deliberately not returned.
     return respond({
-      reference,
+      reference: payment.reference,
       payment_status: paymentStatus,
-      settlement_status: settlementStatus,
+      email: payment.email,
+      amount_kobo: Number(payment.amount_kobo),
+      currency: payment.currency,
+      paid_at: isSuccess
+        ? verifiedPaidAt || payment.paid_at || null
+        : null,
       message: isSuccess
-        ? "Payment verified. Settlement is tracked separately."
-        : "Payment is not confirmed successful.",
+        ? "Payment verified successfully."
+        : paymentStatus === "unknown"
+          ? "Payment details could not be fully verified."
+          : "Payment is not confirmed successful.",
     });
   } catch (error) {
     console.error("Verification error:", error);
-    return respond({ error: "Payment verification failed" }, 500);
+
+    return respond(
+      { error: "Payment verification failed" },
+      500,
+    );
   }
 });
