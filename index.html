@@ -679,15 +679,15 @@
   function renderVerifiedReceipt(data, requestedReference) {
     const verifiedReference = String(data.reference || "");
 
-    // Do not display a receipt unless the server returned a matching ref.
     if (
       !verifiedReference ||
       verifiedReference !== requestedReference
     ) {
-      throw new Error("The verified transaction reference did not match.");
+      throw new Error(
+        "The verified transaction reference did not match."
+      );
     }
 
-    // Require the exact expected amount and currency.
     const amountKobo = Number(data.amount_kobo);
 
     if (
@@ -700,8 +700,12 @@
       );
     }
 
-    if (String(data.payment_status).toLowerCase() !== "success") {
-      throw new Error("This payment has not been verified as successful.");
+    if (
+      String(data.payment_status || "").toLowerCase() !== "success"
+    ) {
+      throw new Error(
+        "Paystack has not confirmed this payment as successful."
+      );
     }
 
     const payerEmail =
@@ -713,18 +717,23 @@
       );
     }
 
-    if (!data.paid_at) {
-      throw new Error(
-        "The verified payment date was not returned by the server."
-      );
+    const formattedAmount = formatNaira(amountKobo);
+
+    // A missing payment date must not prevent a verified receipt
+    // from appearing. Never invent a transaction date.
+    let formattedDate = "Verified date unavailable";
+
+    if (data.paid_at) {
+      try {
+        formattedDate = formatLagosDate(data.paid_at);
+      } catch {
+        formattedDate = "Verified date unavailable";
+      }
     }
 
-    const formattedAmount = formatNaira(amountKobo);
-    const formattedDate = formatLagosDate(data.paid_at);
-
-    // The receipt number is generated from the actual reference.
     const receiptNumber =
-      "PSK-" + verifiedReference.slice(-12).toUpperCase();
+      "DGA/2026/PSK-" +
+      verifiedReference.slice(-8).toUpperCase();
 
     document.querySelector("#receipt-number").textContent =
       receiptNumber;
@@ -750,10 +759,14 @@
     document.querySelector("#receipt-signature").textContent =
       "VERIFIED TRANSACTION · " + verifiedReference;
 
-    // Show only after all receipt fields pass validation.
-    paymentPanel.hidden = true;
+    // Display the receipt only after server verification and
+    // all required payment details have been validated.
     receipt.hidden = false;
-    document.title = `Payment Receipt ${receiptNumber}`;
+    paymentPanel.hidden = true;
+
+    document.title = `DE-GLOBAL ACADEMY | Receipt ${receiptNumber}`;
+
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   async function verifyReturnedPayment() {
