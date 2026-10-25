@@ -1,3 +1,4 @@
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -7,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function respond(data: unknown, status = 200): Response {
+function respond(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -27,15 +28,31 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const paystackSecret = Deno.env.get("PAYSTACK_SECRET_KEY");
+    const secret = Deno.env.get("PAYSTACK_SECRET_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!paystackSecret || !supabaseUrl || !serviceRoleKey) {
-      return respond({ error: "Server configuration incomplete" }, 500);
+    // Identify missing server configuration without exposing secret values.
+    if (!secret || !supabaseUrl || !serviceKey) {
+      const missing = [
+        ...(!secret ? ["PAYSTACK_SECRET_KEY"] : []),
+        ...(!supabaseUrl ? ["SUPABASE_URL"] : []),
+        ...(!serviceKey ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
+      ];
+
+      console.error("Missing configuration:", missing);
+
+      return respond(
+        {
+          error: "Server configuration incomplete",
+          missing,
+        },
+        500,
+      );
     }
 
     const body = await req.json().catch(() => null);
+
     const email =
       typeof body?.email === "string"
         ? body.email.trim().toLowerCase()
@@ -45,17 +62,20 @@ Deno.serve(async (req: Request) => {
       email.length > 254 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     ) {
-      return respond({ error: "Enter a valid email address" }, 400);
+      return respond(
+        { error: "Enter a valid email address" },
+        400,
+      );
     }
 
-    // The server fixes the amount: NGN 100 = 10,000 kobo.
+    // Fixed server-side amount: NGN 100 = 10,000 kobo.
     const amount = 10000;
     const reference =
       `ngn100_${crypto.randomUUID().replaceAll("-", "")}`;
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const db = createClient(supabaseUrl, serviceKey);
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await db
       .from("payments")
       .insert({
         reference,
@@ -67,16 +87,20 @@ Deno.serve(async (req: Request) => {
       });
 
     if (insertError) {
-      console.error("Payment record creation failed:", insertError);
-      return respond({ error: "Could not create payment record" }, 500);
+      console.error("Payment ledger insert failed:", insertError.message);
+
+      return respond(
+        { error: "Could not create payment record" },
+        500,
+      );
     }
 
-    const paystackResponse = await fetch(
+    const response = await fetch(
       "https://api.paystack.co/transaction/initialize",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${paystackSecret}`,
+          Authorization: `Bearer ${secret}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -91,19 +115,23 @@ Deno.serve(async (req: Request) => {
       },
     );
 
-    const result = await paystackResponse.json().catch(() => ({}));
+    const result = await response.json().catch(() => ({}));
 
     if (
-      !paystackResponse.ok ||
+      !response.ok ||
       result.status !== true ||
       !result.data?.authorization_url
     ) {
-      await supabase
+      await db
         .from("payments")
         .update({ payment_status: "failed" })
         .eq("reference", reference);
 
-      console.error("Paystack initialization failed:", result.message);
+      console.error(
+        "Paystack initialization failed:",
+        result.message ?? "Unknown Paystack error",
+      );
+
       return respond(
         { error: "Paystack could not initialize the payment" },
         502,
@@ -116,6 +144,10 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error("Initialization error:", error);
-    return respond({ error: "Payment initialization failed" }, 500);
+
+    return respond(
+      { error: "Payment initialization failed" },
+      500,
+    );
   }
 });
