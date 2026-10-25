@@ -5,33 +5,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#087f5b">
-  <title>Paystack NGN 100 Payment Test</title>
+  <meta name="description" content="Secure Paystack payment and verified electronic receipt for DE-GLOBAL ACADEMY.">
+  <title>DE-GLOBAL ACADEMY | Paystack Payment</title>
 
   <style>
     :root {
       color-scheme: light;
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f3f6fb;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
-      background: #f3f6fb;
-      color: #172033;
       min-height: 100vh;
+      padding: 24px;
+      background: #f3f6fb;
       display: grid;
       place-items: center;
-      padding: 24px;
-      box-sizing: border-box;
     }
 
     main {
       width: min(100%, 520px);
-      background: white;
+      padding: 28px;
+      background: #fff;
       border: 1px solid #e1e7f0;
       border-radius: 20px;
-      padding: 28px;
       box-shadow: 0 14px 45px #17203312;
-      box-sizing: border-box;
     }
 
     .eyebrow {
@@ -54,25 +59,24 @@
 
     label {
       display: block;
-      font-weight: 650;
       margin: 18px 0 7px;
+      font-weight: 650;
     }
 
     input {
       width: 100%;
-      box-sizing: border-box;
+      padding: 13px 14px;
       border: 1px solid #cbd5e1;
       border-radius: 10px;
-      padding: 13px 14px;
       font: inherit;
     }
 
     button {
       width: 100%;
-      border: 0;
-      border-radius: 11px;
       padding: 14px;
-      margin-top: 20px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 10px;
       background: #087f5b;
       color: white;
       font: inherit;
@@ -85,10 +89,28 @@
       cursor: wait;
     }
 
+    button.secondary {
+      background: #e8eef6;
+      color: #172033;
+    }
+
     .amount {
+      margin: 18px 0 6px;
       font-size: 32px;
       font-weight: 850;
-      margin: 18px 0 6px;
+    }
+
+    .small {
+      font-size: 12px;
+    }
+
+    .warning {
+      padding: 12px;
+      border: 1px solid #fed7aa;
+      border-radius: 10px;
+      background: #fff7ed;
+      font-size: 13px;
+      line-height: 1.5;
     }
 
     .status {
@@ -96,35 +118,300 @@
       padding: 14px;
       border-radius: 10px;
       background: #f1f5f9;
+      font-size: 14px;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
+      line-height: 1.6;
+    }
+
+    .status[data-kind="success"] {
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    .status[data-kind="error"] {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    /* Receipt */
+
+    #receipt {
+      width: min(100%, 800px);
+      margin: 0 auto;
+      padding: 30px;
+      background: #fff;
+      border: 1px solid #d9e1eb;
+      border-radius: 14px;
+      box-shadow: 0 10px 35px #17203312;
+    }
+
+    .receipt-header {
+      padding-bottom: 20px;
+      border-bottom: 2px solid #172033;
+      text-align: center;
+    }
+
+    .receipt-header h2 {
+      margin: 0 0 6px;
+      font-size: clamp(18px, 3vw, 25px);
+    }
+
+    .receipt-subtitle {
+      color: #2563eb;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .13em;
+    }
+
+    .receipt-badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 7px 16px;
+      border: 1px solid #bfdbfe;
+      border-radius: 30px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .08em;
+    }
+
+    .receipt-meta {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px 18px;
+      margin: 20px 0;
+      padding: 16px;
+      border: 1px solid #dbe4f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .meta-label {
+      color: #475569;
+    }
+
+    .success-label {
+      color: #15803d;
+      font-weight: 850;
+    }
+
+    .receipt-section {
+      margin-top: 24px;
+    }
+
+    .receipt-section h3 {
+      margin: 0 0 12px;
+      padding-left: 10px;
+      border-left: 4px solid #2563eb;
       font-size: 14px;
     }
 
-    .warning {
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      padding: 12px;
+    .receipt-profile {
+      padding: 18px;
+      border: 1px solid #dbe4f0;
       border-radius: 10px;
+      background: #f8fafc;
+      overflow-wrap: anywhere;
+    }
+
+    .profile-row {
+      display: grid;
+      grid-template-columns: 135px minmax(0, 1fr);
+      gap: 12px;
+      padding: 5px 0;
       font-size: 13px;
     }
 
-    .small {
+    .profile-row span:first-child {
+      color: #475569;
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .receipt-table {
+      width: 100%;
+      border-collapse: collapse;
       font-size: 12px;
+    }
+
+    .receipt-table th {
+      padding: 11px 9px;
+      background: #eef2f7;
+      color: #475569;
+      text-align: left;
+      border: 1px solid #dbe4f0;
+    }
+
+    .receipt-table td {
+      padding: 14px 9px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+
+    .receipt-table td:last-child {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .receipt-total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 20px;
+      padding: 19px;
+      border-radius: 10px;
+      background: #111827;
+      color: #fff;
+    }
+
+    .receipt-total .small {
+      color: #cbd5e1;
+      letter-spacing: .07em;
+    }
+
+    .receipt-total strong {
+      color: #4ade80;
+      font-size: clamp(21px, 4vw, 29px);
+      white-space: nowrap;
+    }
+
+    .receipt-notice {
+      margin-top: 20px;
+      padding: 16px;
+      border-left: 4px solid #2563eb;
+      border-radius: 5px;
+      background: #eff6ff;
+      color: #1e40af;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .receipt-footer {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px dashed #cbd5e1;
+      text-align: center;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+    }
+
+    .receipt-footer strong {
+      color: #172033;
+      letter-spacing: .1em;
+    }
+
+    .receipt-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .receipt-actions button {
+      flex: 1;
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 12px;
+      }
+
+      main,
+      #receipt {
+        padding: 17px;
+      }
+
+      .receipt-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-row {
+        grid-template-columns: 110px minmax(0, 1fr);
+      }
+
+      .receipt-total {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .receipt-actions {
+        flex-direction: column;
+      }
+
+      .receipt-table {
+        min-width: 480px;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+
+      html,
+      body {
+        display: block;
+        width: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+      }
+
+      main,
+      .no-print {
+        display: none !important;
+      }
+
+      #receipt {
+        display: block !important;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .receipt-section,
+      .receipt-total,
+      .receipt-notice,
+      .receipt-meta,
+      .receipt-profile {
+        break-inside: avoid;
+      }
     }
   </style>
 </head>
 
 <body>
-<main>
-  <div class="eyebrow">Payment integration test</div>
 
-  <h1>Paystack payment check</h1>
+<main id="payment-panel">
+  <div class="eyebrow">DE-GLOBAL ACADEMY · PAYMENT PORTAL</div>
+
+  <h1>Paystack payment</h1>
 
   <p>
-    Make a one-off payment to test your Paystack integration
-    and inspect payment verification status. This demo accepts
-    a fixed NGN 100 charge.
+    Make a secure payment through Paystack. A downloadable
+    receipt is available after the payment has been verified.
   </p>
 
   <div class="amount">
@@ -133,8 +420,8 @@
 
   <div class="warning">
     <strong>Live payment:</strong>
-    Clicking Pay opens a real checkout and may charge your
-    payment method. Paystack fees and settlement timing may apply.
+    This checkout processes real money. Only continue when
+    you intend to make a payment.
   </div>
 
   <form id="pay-form">
@@ -144,6 +431,7 @@
       id="email"
       type="email"
       autocomplete="email"
+      maxlength="254"
       required
       placeholder="you@example.com"
     >
@@ -157,28 +445,209 @@
     id="result"
     class="status"
     aria-live="polite"
+    role="status"
   >No payment started yet.</section>
 
+  <button
+    id="retry-verification"
+    class="secondary"
+    type="button"
+    hidden
+  >Check payment again</button>
+
+  <button
+    id="return-button"
+    class="secondary"
+    type="button"
+    hidden
+  >Return to payment page</button>
+
   <p class="small">
-    Your Paystack secret key is kept on the server.
-    Payment confirmation is checked by Supabase Edge Functions.
+    Your Paystack secret key remains on the server.
+    Payment confirmation is checked by Supabase.
   </p>
 </main>
 
+<section id="receipt" hidden aria-label="Verified payment receipt">
+  <header class="receipt-header">
+    <h2>DE-GLOBAL ACADEMY, GBOKO NORTH</h2>
+    <div class="receipt-subtitle">E-RESULT PORTAL SERVICES</div>
+    <span class="receipt-badge">PAYSTACK PAYMENT RECEIPT</span>
+  </header>
+
+  <div class="receipt-meta">
+    <div>
+      <span class="meta-label">Receipt No:</span>
+      <strong id="receipt-number">—</strong>
+    </div>
+
+    <div>
+      <span class="meta-label">Date &amp; Time:</span>
+      <strong id="receipt-date">—</strong>
+    </div>
+
+    <div>
+      <span class="meta-label">Transaction Ref:</span>
+      <strong id="receipt-reference">—</strong>
+    </div>
+
+    <div>
+      <span class="meta-label">Payment Status:</span>
+      <strong class="success-label">SUCCESSFUL</strong>
+    </div>
+  </div>
+
+  <section class="receipt-section">
+    <h3>PAYER IDENTIFICATION PROFILE</h3>
+
+    <div class="receipt-profile">
+      <div class="profile-row">
+        <span>Payer Email:</span>
+        <strong id="receipt-email">—</strong>
+      </div>
+
+      <div class="profile-row">
+        <span>Payment Provider:</span>
+        <strong>Paystack</strong>
+      </div>
+
+      <div class="profile-row">
+        <span>Currency:</span>
+        <strong>NGN</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="receipt-section">
+    <h3>TRANSACTION ITEMISED DESCRIPTION</h3>
+
+    <div class="table-scroll">
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>ITEM DESCRIPTION</th>
+            <th>PAYMENT DETAILS</th>
+            <th>AMOUNT</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>
+              <strong>Online Payment Integration Test</strong>
+              <div class="small">
+                One-off payment processed through secure Paystack
+                checkout.
+              </div>
+            </td>
+
+            <td>
+              Paystack Online Checkout
+              <br>
+              Ref: <span id="receipt-table-reference">—</span>
+            </td>
+
+            <td id="receipt-amount">₦100.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="receipt-total">
+    <div>
+      <div class="small">PAID SERVICE FEE (PAYSTACK)</div>
+      <strong style="font-size:16px;color:#fff">
+        Payment Successfully Verified
+      </strong>
+    </div>
+
+    <strong id="receipt-total-amount">₦100.00</strong>
+  </div>
+
+  <div class="receipt-notice">
+    <strong>PAYMENT VERIFICATION NOTICE:</strong>
+    This electronic receipt confirms that your payment was
+    successfully processed and verified through Paystack.
+    You can retain this receipt as proof of payment for this
+    transaction.
+  </div>
+
+  <footer class="receipt-footer">
+    Electronic Payment Receipt · Paystack Gateway
+    <br>
+    <strong id="receipt-signature">VERIFIED TRANSACTION</strong>
+  </footer>
+
+  <div class="receipt-actions no-print">
+    <button id="print-receipt" type="button">
+      Print / Save as PDF
+    </button>
+
+    <button id="new-payment" class="secondary" type="button">
+      Return to payment page
+    </button>
+  </div>
+</section>
+
 <script type="module">
-  // Public frontend configuration only.
+  // These are public frontend settings, not secret keys.
   const SUPABASE_URL =
     "https://jccdohuiumsqgxuvtffn.supabase.co";
 
   const SUPABASE_ANON_KEY =
     "sb_publishable_oruSvqZw3HGU60gk_pTafg_AogCi7Pb";
 
+  const EXPECTED_AMOUNT_KOBO = 10000;
+  const EXPECTED_CURRENCY = "NGN";
+
   const form = document.querySelector("#pay-form");
-  const button = document.querySelector("#pay-button");
+  const payButton = document.querySelector("#pay-button");
   const result = document.querySelector("#result");
+  const paymentPanel = document.querySelector("#payment-panel");
+  const receipt = document.querySelector("#receipt");
+  const retryButton = document.querySelector("#retry-verification");
+  const returnButton = document.querySelector("#return-button");
 
   const params = new URLSearchParams(location.search);
-  const reference = params.get("reference");
+
+  // Paystack commonly returns the transaction reference in "reference".
+  const returnedReference =
+    params.get("reference") || params.get("trxref");
+
+  let verificationInProgress = false;
+
+  function setMessage(message, kind = "info") {
+    result.textContent = message;
+    result.dataset.kind = kind;
+  }
+
+  function showReturnButton() {
+    returnButton.hidden = false;
+  }
+
+  function formatNaira(amountKobo) {
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amountKobo / 100);
+  }
+
+  function formatLagosDate(value) {
+    const date = new Date(value);
+
+    if (!Number.isFinite(date.getTime())) {
+      throw new Error("The verified payment date is unavailable.");
+    }
+
+    return date.toLocaleString("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Africa/Lagos"
+    });
+  }
 
   async function callFunction(name, body) {
     const response = await fetch(
@@ -207,34 +676,156 @@
     return data;
   }
 
-  // Verify the transaction after Paystack redirects back.
-  if (reference) {
-    form.hidden = true;
-    button.disabled = true;
+  function renderVerifiedReceipt(data, requestedReference) {
+    const verifiedReference = String(data.reference || "");
 
-    result.textContent =
-      `Payment return detected. Verifying reference ${reference}…`;
+    // Do not display a receipt unless the server returned a matching ref.
+    if (
+      !verifiedReference ||
+      verifiedReference !== requestedReference
+    ) {
+      throw new Error("The verified transaction reference did not match.");
+    }
+
+    // Require the exact expected amount and currency.
+    const amountKobo = Number(data.amount_kobo);
+
+    if (
+      !Number.isSafeInteger(amountKobo) ||
+      amountKobo !== EXPECTED_AMOUNT_KOBO ||
+      data.currency !== EXPECTED_CURRENCY
+    ) {
+      throw new Error(
+        "The verified amount or currency does not match this payment."
+      );
+    }
+
+    if (String(data.payment_status).toLowerCase() !== "success") {
+      throw new Error("This payment has not been verified as successful.");
+    }
+
+    const payerEmail =
+      typeof data.email === "string" ? data.email.trim() : "";
+
+    if (!payerEmail) {
+      throw new Error(
+        "The verified payer email was not returned by the server."
+      );
+    }
+
+    if (!data.paid_at) {
+      throw new Error(
+        "The verified payment date was not returned by the server."
+      );
+    }
+
+    const formattedAmount = formatNaira(amountKobo);
+    const formattedDate = formatLagosDate(data.paid_at);
+
+    // The receipt number is generated from the actual reference.
+    const receiptNumber =
+      "PSK-" + verifiedReference.slice(-12).toUpperCase();
+
+    document.querySelector("#receipt-number").textContent =
+      receiptNumber;
+
+    document.querySelector("#receipt-date").textContent =
+      formattedDate;
+
+    document.querySelector("#receipt-reference").textContent =
+      verifiedReference;
+
+    document.querySelector("#receipt-table-reference").textContent =
+      verifiedReference;
+
+    document.querySelector("#receipt-email").textContent =
+      payerEmail;
+
+    document.querySelector("#receipt-amount").textContent =
+      formattedAmount;
+
+    document.querySelector("#receipt-total-amount").textContent =
+      formattedAmount;
+
+    document.querySelector("#receipt-signature").textContent =
+      "VERIFIED TRANSACTION · " + verifiedReference;
+
+    // Show only after all receipt fields pass validation.
+    paymentPanel.hidden = true;
+    receipt.hidden = false;
+    document.title = `Payment Receipt ${receiptNumber}`;
+  }
+
+  async function verifyReturnedPayment() {
+    if (verificationInProgress || !returnedReference) return;
+
+    verificationInProgress = true;
+    retryButton.disabled = true;
+    retryButton.hidden = true;
+    form.hidden = true;
+    payButton.disabled = true;
+
+    setMessage(
+      "Checking the transaction with Paystack. Please wait…"
+    );
 
     try {
       const data = await callFunction(
         "paystack-verify",
-        { reference }
+        { reference: returnedReference }
       );
 
-      result.textContent = [
-        `Payment status: ${data.payment_status || "unknown"}`,
-        `Settlement status: ${data.settlement_status || "not available"}`,
-        `Reference: ${data.reference || reference}`,
-        data.message || ""
-      ].filter(Boolean).join("\n");
+      const paymentStatus =
+        String(data.payment_status || "unknown").toLowerCase();
+
+      if (paymentStatus === "success") {
+        renderVerifiedReceipt(data, returnedReference);
+        return;
+      }
+
+      if (
+        paymentStatus === "pending" ||
+        paymentStatus === "ongoing" ||
+        paymentStatus === "processing"
+      ) {
+        setMessage(
+          "Your payment is not yet confirmed as successful. " +
+          "No successful receipt has been issued. You can check again shortly."
+        );
+
+        retryButton.hidden = false;
+        showReturnButton();
+        return;
+      }
+
+      setMessage(
+        `Payment status: ${paymentStatus}. ` +
+        "A successful receipt cannot be issued for this transaction."
+      );
+
+      retryButton.hidden = false;
+      showReturnButton();
 
     } catch (error) {
-      result.textContent =
+      setMessage(
         `Could not verify payment: ${error.message}\n` +
-        "Check the Supabase function logs and Paystack dashboard.";
-      form.hidden = false;
-      button.disabled = false;
+        "Your payment has not been confirmed by this page. " +
+        "Check your Paystack dashboard before trying to pay again.",
+        "error"
+      );
+
+      retryButton.hidden = false;
+      showReturnButton();
+
+    } finally {
+      verificationInProgress = false;
+      retryButton.disabled = false;
     }
+  }
+
+  // A return URL is never sufficient proof of payment by itself.
+  if (returnedReference) {
+    verifyReturnedPayment();
   }
 
   // Start a fixed NGN 100 payment.
@@ -242,12 +833,12 @@
     event.preventDefault();
 
     const email =
-      document.querySelector("#email").value.trim();
+      document.querySelector("#email").value.trim().toLowerCase();
 
     if (!email) return;
 
-    button.disabled = true;
-    result.textContent = "Creating a secure checkout session…";
+    payButton.disabled = true;
+    setMessage("Creating a secure checkout session…");
 
     try {
       const data = await callFunction(
@@ -255,25 +846,47 @@
         { email }
       );
 
-      if (!data.authorization_url) {
-        throw new Error(
-          "Paystack did not return a checkout URL."
-        );
+      if (
+        typeof data.authorization_url !== "string" ||
+        !data.authorization_url.startsWith("https://")
+      ) {
+        throw new Error("Paystack did not return a valid checkout URL.");
       }
 
-      result.textContent =
-        `Checkout created.\nReference: ${data.reference}\n` +
-        "Redirecting to Paystack…";
+      setMessage("Checkout created. Redirecting to Paystack…");
 
+      // Never accept an amount supplied by the browser.
       location.assign(data.authorization_url);
 
     } catch (error) {
-      result.textContent =
-        `Could not start payment: ${error.message}`;
+      setMessage(
+        `Could not start payment: ${error.message}`,
+        "error"
+      );
 
-      button.disabled = false;
+      payButton.disabled = false;
     }
   });
+
+  retryButton.addEventListener("click", () => {
+    verifyReturnedPayment();
+  });
+
+  returnButton.addEventListener("click", () => {
+    // Remove transaction query parameters before returning to the form.
+    location.assign(location.pathname);
+  });
+
+  document.querySelector("#print-receipt").addEventListener(
+    "click",
+    () => window.print()
+  );
+
+  document.querySelector("#new-payment").addEventListener(
+    "click",
+    () => location.assign(location.pathname)
+  );
 </script>
+
 </body>
 </html>
